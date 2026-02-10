@@ -1,50 +1,590 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
-    <title>Servidor Web MultiHilos</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Galería de Imágenes</title>
     <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         body {
-            background: #111827;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 40px 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        /* HEADER */
+        header {
+            text-align: center;
             color: white;
-            font-family: Arial;
+            margin-bottom: 50px;
+        }
+
+        header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        header p {
+            font-size: 1.1em;
+            opacity: 0.95;
+        }
+
+        /* UPLOAD SECTION */
+        .upload-section {
+            background: white;
+            border-radius: 15px;
+            padding: 40px;
+            margin-bottom: 40px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
             text-align: center;
         }
-        .card {
-            background: #1f2937;
-            padding: 30px;
-            margin: 40px auto;
-            width: 500px;
-            border-radius: 15px;
+
+        .upload-section h2 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 1.5em;
         }
-        h1 {
-            color: #00ff99;
+
+        /* DRAG AND DROP */
+        .drop-zone {
+            border: 3px dashed #667eea;
+            border-radius: 10px;
+            padding: 40px;
+            background: #f8f9ff;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 20px;
         }
-        input, button {
-            padding: 10px;
-            margin: 10px;
+
+        .drop-zone:hover {
+            border-color: #764ba2;
+            background: #f0f4ff;
         }
-        button {
-            background: #6366f1;
+
+        .drop-zone.dragover {
+            border-color: #764ba2;
+            background: #ede9ff;
+            transform: scale(1.02);
+        }
+
+        .drop-icon {
+            font-size: 3em;
+            margin-bottom: 10px;
+        }
+
+        .drop-text {
+            color: #666;
+            font-size: 1.1em;
+            margin-bottom: 10px;
+        }
+
+        .drop-subtitle {
+            color: #999;
+            font-size: 0.9em;
+        }
+
+        /* FORM */
+        #uploadForm {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .file-input-label {
+            display: inline-block;
+            padding: 12px 30px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .file-input-label:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        .file-input-label:active {
+            transform: translateY(0);
+        }
+
+        .submit-btn {
+            padding: 12px 40px;
+            background: #4caf50;
             color: white;
             border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 1em;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(76, 175, 80, 0.3);
+            display: none;
+        }
+
+        .submit-btn:hover {
+            background: #45a049;
+            transform: translateY(-2px);
+        }
+
+        .submit-btn.show {
+            display: block;
+        }
+
+        .file-name {
+            color: #666;
+            font-size: 0.95em;
+            min-height: 20px;
+        }
+
+        /* GALLERY */
+        .gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+
+        .gallery-item {
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .gallery-item:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+        }
+
+        .gallery-item img {
+            width: 100%;
+            height: 250px;
+            object-fit: cover;
+            display: block;
+        }
+
+        .gallery-item-info {
+            padding: 15px;
+            background: #f9f9f9;
+        }
+
+        .gallery-item-name {
+            font-weight: 600;
+            color: #333;
+            font-size: 0.95em;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* EMPTY STATE */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: white;
+        }
+
+        .empty-state-icon {
+            font-size: 4em;
+            margin-bottom: 20px;
+            opacity: 0.8;
+        }
+
+        .empty-state-text {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+
+        /* LOADING */
+        .loading {
+            text-align: center;
+            color: white;
+            font-size: 1.1em;
+            margin-top: 20px;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* MODAL */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal.show {
+            display: flex;
+        }
+
+        .modal-content {
+            max-width: 90%;
+            max-height: 90%;
+            background: white;
+            border-radius: 15px;
+            overflow: auto;
+            position: relative;
+        }
+
+        .modal-content img {
+            max-width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: white;
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            font-size: 1.5em;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease;
+        }
+
+        .modal-close:hover {
+            background: #f0f0f0;
+        }
+
+        /* FOOTER */
+        footer {
+            text-align: center;
+            color: white;
+            opacity: 0.8;
+            font-size: 0.9em;
+            padding: 20px;
+        }
+
+        /* MESSAGE */
+        .message {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 25px;
+            background: white;
             border-radius: 8px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            animation: slideIn 0.3s ease;
+            z-index: 2000;
+        }
+
+        .message.success {
+            border-left: 4px solid #4caf50;
+            color: #4caf50;
+        }
+
+        .message.error {
+            border-left: 4px solid #f44336;
+            color: #f44336;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @media (max-width: 768px) {
+            header h1 {
+                font-size: 1.8em;
+            }
+
+            .gallery {
+                grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            }
+
+            .upload-section {
+                padding: 25px;
+            }
+
+            .drop-zone {
+                padding: 25px;
+            }
         }
     </style>
 </head>
 <body>
 
-<h1>Servidor Web Multi-Hilos</h1>
+<div class="container">
 
-<div class="card">
-    <h2>Subir Imagen (JPG o GIF)</h2>
+    <!-- HEADER -->
+    <header>
+        <h1>Galeria de Imagenes</h1>
+        <p>Explora y comparte tus imagenes</p>
+    </header>
 
-    <form action="/" method="POST" enctype="multipart/form-data">
-        <input type="file" name="archivo" accept=".jpg,.gif" required>
-        <br>
-        <button type="submit">Subir</button>
-    </form>
+    <!-- UPLOAD SECTION -->
+    <div class="upload-section">
+        <h2>Subir Imagen</h2>
+        
+        <form id="uploadForm" enctype="multipart/form-data">
+            <div class="drop-zone" id="dropZone">
+                <div class="drop-icon"></div>
+                <div class="drop-text">Arrastra tu imagen aqui</div>
+                <div class="drop-subtitle">o haz clic para seleccionar</div>
+            </div>
+            
+            <label class="file-input-label" for="fileInput">
+                Seleccionar Archivo
+            </label>
+            <input type="file" id="fileInput" name="archivo" accept=".jpg,.jpeg,.gif,.png" required>
+            
+            <div class="file-name" id="fileName"></div>
+            <button type="submit" class="submit-btn" id="submitBtn">Subir Imagen</button>
+        </form>
+    </div>
+
+    <!-- GALLERY -->
+    <div id="gallery" class="gallery"></div>
+
+    <!-- EMPTY STATE -->
+    <div id="emptyState" class="empty-state" style="display: none;">
+        <div class="empty-state-icon">[ o ]</div>
+        <div class="empty-state-text">No hay imagenes aun. Sube la primera!</div>
+    </div>
+
+    <!-- FOOTER -->
+    <footer>
+        <p>Cargando imágenes automáticamente...</p>
+    </footer>
 
 </div>
+
+<!-- MODAL -->
+<div id="modal" class="modal">
+    <div class="modal-content">
+        <button class="modal-close" id="modalClose">&times;</button>
+        <img id="modalImage" src="" alt="">
+    </div>
+</div>
+
+<!-- MESSAGE -->
+<div id="message" class="message" style="display: none;"></div>
+
+<script>
+    const uploadForm = document.getElementById('uploadForm');
+    const fileInput = document.getElementById('fileInput');
+    const dropZone = document.getElementById('dropZone');
+    const fileName = document.getElementById('fileName');
+    const submitBtn = document.getElementById('submitBtn');
+    const gallery = document.getElementById('gallery');
+    const emptyState = document.getElementById('emptyState');
+    const modal = document.getElementById('modal');
+    const modalImage = document.getElementById('modalImage');
+    const modalClose = document.getElementById('modalClose');
+    const messageDiv = document.getElementById('message');
+
+    // Drag and drop
+    dropZone.addEventListener('click', () => fileInput.click());
+
+    dropZone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dropZone.classList.add('dragover');
+    });
+
+    dropZone.addEventListener('dragleave', () => {
+        dropZone.classList.remove('dragover');
+    });
+
+    dropZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropZone.classList.remove('dragover');
+        const files = e.dataTransfer.files;
+        if (files.length > 0) {
+            fileInput.files = files;
+            updateFileName();
+        }
+    });
+
+    // File input change
+    fileInput.addEventListener('change', updateFileName);
+
+    function updateFileName() {
+        if (fileInput.files.length > 0) {
+            const name = fileInput.files[0].name;
+            fileName.textContent = `Archivo: ${name}`;
+            submitBtn.classList.add('show');
+        } else {
+            fileName.textContent = '';
+            submitBtn.classList.remove('show');
+        }
+    }
+
+    // Form submit
+    uploadForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        if (fileInput.files.length === 0) {
+            showMessage('Por favor selecciona un archivo', 'error');
+            return;
+        }
+
+        const fileName = fileInput.files[0].name;
+        const fileSize = fileInput.files[0].size;
+        console.log('Iniciando carga de archivo:', fileName, 'Tamaño:', fileSize, 'bytes');
+
+        const formData = new FormData();
+        formData.append('archivo', fileInput.files[0]);
+
+        try {
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Subiendo...';
+
+            const response = await fetch('/', {
+                method: 'POST',
+                body: formData
+            });
+
+            console.log('Respuesta del servidor:', response.status, response.statusText);
+
+            if (response.ok) {
+                console.log('Archivo subido exitosamente');
+                showMessage('[OK] Imagen subida correctamente', 'success');
+                fileInput.value = '';
+                fileName.textContent = '';
+                submitBtn.classList.remove('show');
+                await loadGallery();
+            } else {
+                console.error('Error del servidor:', response.status);
+                showMessage('Error al subir la imagen (HTTP ' + response.status + ')', 'error');
+            }
+        } catch (error) {
+            console.error('Error en la carga:', error);
+            showMessage('Error: ' + error.message, 'error');
+        } finally {
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Subir Imagen';
+        }
+    });
+
+    // Load gallery
+    async function loadGallery() {
+        try {
+            const response = await fetch('/api/images');
+            const images = await response.json();
+
+            console.log('Imagenes obtenidas del servidor:', images);
+            gallery.innerHTML = '';
+
+            if (images.length === 0) {
+                emptyState.style.display = 'block';
+                console.log('No hay imagenes para mostrar');
+                return;
+            }
+
+            emptyState.style.display = 'none';
+
+            images.forEach(image => {
+                const item = document.createElement('div');
+                item.className = 'gallery-item';
+                item.innerHTML = `
+                    <img src="/uploads/${image}" alt="${image}" loading="lazy" onerror="console.error('Error cargando imagen: ${image}')">
+                    <div class="gallery-item-info">
+                        <div class="gallery-item-name">${image}</div>
+                    </div>
+                `;
+                item.addEventListener('click', () => openModal(`/uploads/${image}`));
+                gallery.appendChild(item);
+            });
+            console.log('Galeria actualizada con ' + images.length + ' imagenes');
+        } catch (error) {
+            console.error('Error cargando galeria:', error);
+        }
+    }
+
+    // Modal
+    function openModal(src) {
+        modalImage.src = src;
+        modal.classList.add('show');
+    }
+
+    modalClose.addEventListener('click', () => {
+        modal.classList.remove('show');
+    });
+
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            modal.classList.remove('show');
+        }
+    });
+
+    // Keyboard close modal
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && modal.classList.contains('show')) {
+            modal.classList.remove('show');
+        }
+    });
+
+    // Show message
+    function showMessage(text, type) {
+        messageDiv.textContent = text;
+        messageDiv.className = `message ${type}`;
+        messageDiv.style.display = 'block';
+        setTimeout(() => {
+            messageDiv.style.display = 'none';
+        }, 3000);
+    }
+
+    // Load gallery on page load
+    loadGallery();
+
+    // Refresh gallery every 5 seconds
+    setInterval(loadGallery, 5000);
+</script>
 
 </body>
 </html>
